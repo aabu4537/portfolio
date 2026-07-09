@@ -179,18 +179,19 @@ export const bench =
 
 export const project = {
   name: "RAUMDEUTER",
-  competition: "WORLD CUP 2026 MATCH PREDICTOR",
+  competition: "THE OFF-BALL ENGINE \u2022 WORLD CUP 2026",
+  url: "https://raumdeuter.vercel.app",
   stats: [
-    { value: "47K+", label: "Intl matches trained on" },
-    { value: "10K", label: "Monte Carlo sims" },
-    { value: "<2s", label: "Full tournament forecast" },
+    { value: "DIXON-COLES", label: "Adjusted Poisson match engine" },
+    { value: "\u03b1-BLEND", label: "On-ball + off-ball player vectors" },
+    { value: "0 SERVERS", label: "Static build, client-side sims" },
   ],
   bullets: [
-    "Custom Elo engine with neutral-venue adjustment, recency decay, and soft-ceiling compression that corrects rating inflation in traditional Elo models.",
-    "Production backend: FastAPI, PostgreSQL, Redis caching, Alembic migrations, idempotent ETL.",
-    "Next.js/TypeScript frontend with interactive pressing heatmaps and percentile-ranked player grades from a possession-adjusted defensive metric built on StatsBomb tracking data.",
+    "Engineered a Dixon-Coles adjusted Poisson match engine that prices team scoring rates from attack and defense strength parameters, correcting the low-score dependency that plain Poisson models get wrong.",
+    "Built per-player on-ball and off-ball value vectors (pressing, regains, space interpretation) with a tunable alpha dial that reweights them live inside the win probability model.",
+    "Designed a zero-backend data architecture: model parameters and player features precomputed into static artifacts at build time, with every knockout simulation running client-side.",
   ],
-  stack: ["Python", "FastAPI", "PostgreSQL", "Redis", "Next.js", "TypeScript"],
+  stack: ["React", "TypeScript", "Poisson modeling", "Feature engineering", "Vercel"],
 };
 
 export const education = {
