@@ -2,50 +2,58 @@
 
 import { useEffect, useRef, useState } from "react";
 import { identity, modes } from "@/lib/content";
+import {
+  sfxBlip,
+  sfxConfirm,
+  sfxWhistle,
+  sfxKick,
+  soundEnabled,
+  setSoundEnabled,
+} from "@/lib/sound";
 
-const SEEN_KEY = "cc26_seen_intro";
-
-export default function GameLayer({ forcePlay }: { forcePlay: boolean }) {
-  // "boot": deciding whether to show; "title" | "menu": game visible; "done": hidden
-  const [phase, setPhase] = useState<"boot" | "title" | "menu" | "done">("boot");
+export default function GameLayer() {
+  const [phase, setPhase] = useState<"title" | "menu" | "done">("title");
   const [sel, setSel] = useState(0);
   const [kicked, setKicked] = useState(false);
   const [wiping, setWiping] = useState(false);
+  const [sound, setSound] = useState(true);
   const phaseRef = useRef(phase);
   const selRef = useRef(sel);
   phaseRef.current = phase;
   selRef.current = sel;
 
-  // Decide on mount: returning visitors skip the intro unless ?play=1
+  // Read persisted sound preference after mount (avoids hydration mismatch)
   useEffect(() => {
-    let seen = false;
-    try {
-      seen = window.localStorage.getItem(SEEN_KEY) === "1";
-    } catch {}
-    if (seen && !forcePlay) {
-      setPhase("done");
-    } else {
-      setPhase("title");
-    }
-  }, [forcePlay]);
+    setSound(soundEnabled());
+  }, []);
 
   // Lock body scroll while the game layer is visible
   useEffect(() => {
-    document.body.style.overflow =
-      phase === "title" || phase === "menu" ? "hidden" : "";
+    document.body.style.overflow = phase === "done" ? "" : "hidden";
     return () => {
       document.body.style.overflow = "";
     };
   }, [phase]);
 
-  function markSeen() {
-    try {
-      window.localStorage.setItem(SEEN_KEY, "1");
-    } catch {}
+  function toggleSound() {
+    const next = !sound;
+    setSound(next);
+    setSoundEnabled(next);
+    if (next) sfxBlip();
+  }
+
+  function openMenu() {
+    sfxConfirm();
+    setPhase("menu");
+  }
+
+  function moveSel(i: number) {
+    if (i !== selRef.current) sfxBlip();
+    setSel((i + modes.length) % modes.length);
   }
 
   function kickoff(target: string) {
-    markSeen();
+    sfxWhistle();
     setWiping(true);
     window.setTimeout(() => {
       setPhase("done");
@@ -56,20 +64,18 @@ export default function GameLayer({ forcePlay }: { forcePlay: boolean }) {
 
   function skip(e: React.MouseEvent) {
     e.preventDefault();
-    markSeen();
     setPhase("done");
     window.scrollTo(0, 0);
   }
 
-  // Keyboard: Enter/Space on title -> menu; arrows + Enter in menu
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const p = phaseRef.current;
       if (p === "title" && (e.key === "Enter" || e.key === " ")) {
-        setPhase("menu");
+        openMenu();
       } else if (p === "menu") {
-        if (e.key === "ArrowDown") setSel((s) => (s + 1) % modes.length);
-        if (e.key === "ArrowUp") setSel((s) => (s - 1 + modes.length) % modes.length);
+        if (e.key === "ArrowDown") moveSel(selRef.current + 1);
+        if (e.key === "ArrowUp") moveSel(selRef.current - 1);
         if (e.key === "Enter") kickoff(modes[selRef.current].target);
       }
     }
@@ -78,13 +84,16 @@ export default function GameLayer({ forcePlay }: { forcePlay: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (phase === "boot" || phase === "done") {
+  if (phase === "done") {
     return wiping ? <div className="wipe go" /> : null;
   }
 
   return (
     <>
       <div className={`game${phase === "menu" ? " mode" : ""}`}>
+        <button className="soundtoggle px" onClick={toggleSound} type="button">
+          SOUND: {sound ? "ON" : "OFF"}
+        </button>
         <a className="skiplink px" href="#pro" onClick={skip}>
           SKIP TO RESUME &raquo;
         </a>
@@ -98,6 +107,7 @@ export default function GameLayer({ forcePlay }: { forcePlay: boolean }) {
             <button
               className={`kickball${kicked ? " kicked" : ""}`}
               onClick={() => {
+                sfxKick();
                 setKicked(true);
                 window.setTimeout(() => setKicked(false), 1400);
               }}
@@ -116,7 +126,7 @@ export default function GameLayer({ forcePlay }: { forcePlay: boolean }) {
                 BUSHARA
               </h1>
               <p className="px subtitle">{identity.role}</p>
-              <button className="px pressstart" onClick={() => setPhase("menu")} type="button">
+              <button className="px pressstart" onClick={openMenu} type="button">
                 PRESS START
               </button>
             </div>
@@ -131,7 +141,7 @@ export default function GameLayer({ forcePlay }: { forcePlay: boolean }) {
                 <button
                   key={m.target}
                   className={`menuitem px${i === sel ? " sel" : ""}`}
-                  onMouseEnter={() => setSel(i)}
+                  onMouseEnter={() => moveSel(i)}
                   onClick={() => kickoff(m.target)}
                   type="button"
                 >
