@@ -87,6 +87,11 @@ export default function ProLayer() {
                   <span className="chip" key={c}>{c}</span>
                 ))}
               </div>
+              <div className="contactrow" style={{ marginTop: "18px" }}>
+                <a className="btn primary" href={project.url} target="_blank" rel="noopener noreferrer">
+                  WATCH LIVE &raquo;
+                </a>
+              </div>
             </div>
           </article>
         </section>
