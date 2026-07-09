@@ -1,0 +1,219 @@
+:root{
+  --pitch-a:#1E7A2E;
+  --pitch-b:#27913A;
+  --navy:#101040;
+  --navy-deep:#0A0A2E;
+  --yellow:#F8D800;
+  --white:#F8F8F8;
+  --red:#D82800;
+  --cyan:#58B8F8;
+  --ink:#1A1A2E;
+  --paper:#F2F0E6;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--navy-deep);font-family:'Inter',sans-serif;color:var(--ink);}
+.px{font-family:'Press Start 2P',monospace;line-height:1.6;}
+button{cursor:pointer;}
+
+/* ============ GAME LAYER ============ */
+.game{
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:repeating-linear-gradient(90deg, var(--pitch-a) 0 80px, var(--pitch-b) 80px 160px);
+  overflow:hidden;
+  transition:opacity .35s steps(6), visibility .35s;
+}
+.game.hidden{opacity:0;visibility:hidden;}
+.game::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 2px, transparent 2px 4px);
+}
+.pitchlines{position:absolute;inset:0;pointer-events:none;}
+.pitchlines .circle{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(60vw,480px);height:min(60vw,480px);
+  border:4px solid rgba(248,248,248,.35);border-radius:50%;
+}
+.pitchlines .midline{position:absolute;left:0;right:0;top:50%;height:4px;background:rgba(248,248,248,.35);}
+
+.kickball{
+  position:absolute;left:50%;top:62%;z-index:2;width:36px;height:36px;
+  transform:translate(-50%,-50%);background:none;border:none;padding:0;
+}
+.kickball svg{width:100%;height:100%;image-rendering:pixelated;}
+.kickball.kicked{animation:kick .9s steps(12) forwards;}
+@keyframes kick{
+  0%{transform:translate(-50%,-50%) rotate(0);}
+  100%{transform:translate(60vw,-46vh) rotate(720deg);opacity:0;}
+}
+
+.titlebox{position:relative;z-index:2;text-align:center;padding:24px;}
+.title-eyebrow{color:var(--white);font-size:clamp(8px,1.6vw,12px);letter-spacing:2px;text-shadow:2px 2px 0 var(--navy-deep);margin-bottom:20px;}
+h1.gametitle{color:var(--yellow);font-size:clamp(22px,5.4vw,52px);text-shadow:4px 4px 0 var(--red), 8px 8px 0 var(--navy-deep);margin-bottom:14px;}
+.subtitle{color:var(--white);font-size:clamp(9px,1.8vw,14px);text-shadow:2px 2px 0 var(--navy-deep);margin-bottom:48px;}
+.pressstart{
+  color:var(--white);font-size:clamp(10px,2vw,16px);text-shadow:2px 2px 0 var(--navy-deep);
+  animation:blink 1.1s steps(2) infinite;background:none;border:none;
+}
+@keyframes blink{50%{opacity:0;}}
+.copyline{position:absolute;bottom:20px;width:100%;text-align:center;color:rgba(248,248,248,.75);font-size:8px;letter-spacing:1px;z-index:2;}
+.skiplink{
+  position:absolute;top:16px;right:16px;z-index:3;color:var(--navy-deep);background:var(--white);
+  font-size:8px;padding:10px 12px;text-decoration:none;border:3px solid var(--navy-deep);box-shadow:3px 3px 0 var(--navy-deep);
+}
+.skiplink:hover{background:var(--yellow);}
+
+.modeselect{position:relative;z-index:2;}
+.menupanel{
+  background:var(--navy);border:4px solid var(--white);
+  box-shadow:0 0 0 4px var(--navy-deep), 8px 8px 0 4px rgba(0,0,0,.4);
+  padding:36px 44px;min-width:min(86vw,460px);
+}
+.menupanel h2{color:var(--yellow);font-size:clamp(11px,2vw,16px);text-align:center;margin-bottom:28px;}
+.menuitem{
+  display:flex;align-items:center;gap:14px;color:var(--white);font-size:clamp(9px,1.8vw,13px);
+  padding:10px 6px;background:none;border:none;width:100%;text-align:left;
+}
+.menuitem .ball{width:14px;height:14px;visibility:hidden;flex:0 0 14px;
+  background:radial-gradient(circle at 35% 35%, #fff 55%, #ccc 56%);
+  clip-path:polygon(25% 0,75% 0,100% 25%,100% 75%,75% 100%,25% 100%,0 75%,0 25%);
+}
+.menuitem.sel{color:var(--yellow);}
+.menuitem.sel .ball{visibility:visible;}
+.menuitem small{color:var(--cyan);font-size:8px;margin-left:auto;}
+.menuhint{color:rgba(248,248,248,.6);font-size:7px;text-align:center;margin-top:24px;letter-spacing:1px;}
+
+.wipe{
+  position:fixed;inset:0;z-index:200;pointer-events:none;
+  background:repeating-linear-gradient(90deg, var(--navy-deep) 0 40px, var(--navy) 40px 80px);
+  transform:translateY(-100%);
+}
+.wipe.go{animation:wipeAnim .6s steps(8) forwards;}
+@keyframes wipeAnim{
+  0%{transform:translateY(-100%);}
+  45%{transform:translateY(0);}
+  55%{transform:translateY(0);}
+  100%{transform:translateY(100%);}
+}
+
+/* ============ PRO LAYER ============ */
+.pro{background:var(--paper);min-height:100vh;}
+.scoreboard{
+  position:sticky;top:0;z-index:50;background:var(--navy);border-bottom:4px solid var(--yellow);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 20px;
+}
+.scoreboard .who{color:var(--yellow);font-size:10px;margin-right:auto;}
+.scoreboard a{color:var(--white);font-size:8px;text-decoration:none;padding:8px 10px;}
+.scoreboard a:hover{color:var(--yellow);}
+.scoreboard .coin{
+  color:var(--navy);background:var(--yellow);font-size:8px;padding:8px 10px;border:none;
+  font-family:'Press Start 2P',monospace;text-decoration:none;display:inline-block;
+}
+
+.promain{max-width:920px;margin:0 auto;padding:56px 24px 96px;}
+.promain section{margin-bottom:72px;}
+.sechead{display:flex;align-items:baseline;gap:16px;border-bottom:4px solid var(--navy);padding-bottom:10px;margin-bottom:28px;}
+.sechead h2{font-size:clamp(12px,2.4vw,18px);color:var(--navy);}
+.sechead span{font-size:8px;color:var(--red);}
+
+.intro h2{font-family:'Inter',sans-serif;font-weight:700;font-size:clamp(26px,4.5vw,40px);color:var(--navy);margin-bottom:12px;}
+.intro p{font-size:17px;line-height:1.65;max-width:64ch;}
+.intro .tags{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;}
+.tag{font-family:'Press Start 2P',monospace;font-size:8px;background:var(--navy);color:var(--white);padding:8px 10px;}
+.tag.alt{background:var(--pitch-a);}
+
+.fixture{
+  border:3px solid var(--navy);background:var(--white);box-shadow:6px 6px 0 var(--navy);
+  margin-bottom:28px;transition:transform .12s steps(2), box-shadow .12s steps(2);
+}
+.fixture:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--navy);}
+.fixture header{background:var(--navy);color:var(--white);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.fixture header .club{font-size:clamp(9px,1.8vw,12px);color:var(--yellow);}
+.fixture header .date{font-size:8px;color:var(--cyan);}
+.fixture .fixbody{padding:18px 20px;}
+.fixture .role{font-weight:700;font-size:16px;margin-bottom:4px;}
+.fixture .loc{font-size:13px;color:#666;margin-bottom:12px;}
+.fixture ul{padding-left:20px;font-size:15px;line-height:1.6;}
+.fixture li{margin-bottom:8px;}
+
+/* ---------- FORMATION ---------- */
+.pitch{
+  position:relative;
+  background:repeating-linear-gradient(0deg, var(--pitch-a) 0 44px, var(--pitch-b) 44px 88px);
+  border:4px solid var(--white);box-shadow:0 0 0 4px var(--navy), 8px 8px 0 4px var(--navy);
+  padding:26px 12px 34px;display:grid;gap:8px;
+  margin-bottom:26px; /* clears the chunky drop shadow so the hint below is readable */
+}
+.rowlabel{
+  text-align:center;font-family:'Press Start 2P',monospace;font-size:7px;
+  color:rgba(248,248,248,.55);letter-spacing:2px;margin-bottom:2px;
+}
+.pitchrow{display:flex;justify-content:space-evenly;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.player{
+  position:relative;text-align:center;width:118px;background:none;border:none;
+  font-family:inherit;padding:0;
+}
+.player .sprite{display:block;width:40px;height:64px;margin:0 auto 8px;image-rendering:pixelated;transition:transform .1s steps(2);}
+.player:hover .sprite,.player:focus-visible .sprite{transform:translateY(-5px);}
+.player b{display:block;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--white);text-shadow:2px 2px 0 var(--navy-deep);margin-bottom:3px;}
+.player i{font-style:normal;font-size:10px;color:rgba(248,248,248,.85);}
+.statcard{
+  position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);
+  display:none;width:190px;z-index:5;text-align:left;
+  background:var(--navy);color:var(--white);border:3px solid var(--white);
+  box-shadow:4px 4px 0 var(--navy-deep);padding:10px 12px;
+  font-size:11px;line-height:1.5;
+}
+.statcard .cardname{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--yellow);display:block;margin-bottom:6px;}
+.player:hover .statcard,.player:focus-visible .statcard{display:block;}
+.pitchrow.toprow .statcard{bottom:auto;top:calc(100% + 8px);}
+.formhint{font-size:11px;color:#777;font-style:italic;}
+.benchnote{font-size:13px;color:#555;margin-top:10px;}
+
+.matchcard{border:3px solid var(--navy);background:var(--white);box-shadow:6px 6px 0 var(--pitch-a);transition:transform .12s steps(2), box-shadow .12s steps(2);}
+.matchcard:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--pitch-a);}
+.matchcard header{background:var(--pitch-a);color:var(--white);padding:14px 18px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;}
+.matchcard header .club{font-size:clamp(9px,1.8vw,12px);color:var(--yellow);}
+.matchcard header .comp{font-size:8px;}
+.matchcard .cardbody{padding:18px 20px;}
+.statline{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 16px;}
+.stat{border:2px solid var(--navy);padding:10px 12px;text-align:center;flex:1;min-width:120px;}
+.stat b{display:block;font-family:'Press Start 2P',monospace;font-size:13px;color:var(--red);margin-bottom:6px;}
+.stat span{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.5px;}
+.matchcard ul{padding-left:20px;font-size:15px;line-height:1.6;}
+.matchcard li{margin-bottom:8px;}
+.stackchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.chip{font-size:11px;font-weight:600;background:var(--paper);border:2px solid var(--navy);padding:5px 9px;}
+
+.edu{border-left:6px solid var(--pitch-a);padding-left:18px;font-size:15px;line-height:1.7;}
+.edu b{font-size:17px;}
+.contactrow{display:flex;gap:14px;flex-wrap:wrap;}
+.btn{
+  font-family:'Press Start 2P',monospace;font-size:9px;text-decoration:none;
+  padding:14px 16px;border:3px solid var(--navy);color:var(--navy);background:var(--white);
+  box-shadow:4px 4px 0 var(--navy);display:inline-block;
+}
+.btn:hover{background:var(--yellow);}
+.btn.primary{background:var(--navy);color:var(--yellow);box-shadow:4px 4px 0 var(--pitch-a);}
+.btn.primary:hover{color:var(--white);}
+.btn.disabled{opacity:.55;}
+.btn.disabled:hover{background:var(--white);}
+
+.sitefooter{
+  text-align:center;padding:26px;background:var(--navy);color:rgba(248,248,248,.7);
+  font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px;line-height:2;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .pressstart{animation:none;}
+  .wipe.go{animation-duration:.01s;}
+  .kickball.kicked{animation-duration:.01s;}
+  html{scroll-behavior:auto;}
+}
+@media (max-width:620px){
+  .player{width:90px;}
+  .player .sprite{width:30px;height:48px;}
+  .statcard{width:160px;}
+  .menupanel{padding:26px 20px;}
+}
