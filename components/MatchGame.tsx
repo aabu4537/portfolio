@@ -58,7 +58,6 @@ interface World {
   lastKicker: number | null;
   kickCooldown: number;
   stealGrace: number;
-  gkHold: number;
   controlled: number;
   score: [number, number];
   clock: number;
@@ -123,7 +122,6 @@ function placeKickoff(w: World, team: 0 | 1) {
   w.lastKicker = null;
   w.kickCooldown = 0;
   w.stealGrace = 1;
-  w.gkHold = 0;
   w.controlled = 4;
   w.mode = "kickoff";
   w.phaseT = 1.1;
@@ -138,7 +136,6 @@ function freshWorld(): World {
     lastKicker: null,
     kickCooldown: 0,
     stealGrace: 0,
-    gkHold: 0,
     controlled: 4,
     score: [0, 0],
     clock: 0,
@@ -175,7 +172,6 @@ function moveToward(m: Man, tx: number, ty: number, speed: number, dt: number) {
 function takeBall(w: World, i: number) {
   w.owner = i;
   w.stealGrace = 0.5;
-  w.gkHold = w.men[i].gk ? 0.8 : 0;
 }
 
 function kickBall(w: World, from: number, tx: number, ty: number, speed: number) {
@@ -263,11 +259,19 @@ function tryCapture(w: World) {
       bd = d;
     }
   });
-  if (best >= 0) takeBall(w, best);
+  if (best >= 0) {
+    const m = w.men[best];
+    if (m.gk) {
+      // keepers parry immediately instead of holding, so the ball never sticks to them
+      kickBall(w, best, m.team === 0 ? 230 : 90, 40 + Math.random() * 100, 150);
+      w.stealGrace = 0.5;
+    } else {
+      takeBall(w, best);
+    }
+  }
 }
 
-function gkAI(w: World, m: Man, i: number, dt: number) {
-  if (w.owner === i) return; // holding the ball: stand still until the punt
+function gkAI(w: World, m: Man, dt: number) {
   const ty = clamp(w.ball.y, GOAL_TOP + 2, GOAL_BOT - 2);
   moveToward(m, m.hx, ty, 42, dt);
 }
@@ -416,7 +420,7 @@ function step(w: World, inp: Input, dt: number) {
   men.forEach((m, i) => {
     if (i === w.controlled) return;
     if (m.gk) {
-      gkAI(w, m, i, dt);
+      gkAI(w, m, dt);
       return;
     }
     if (w.owner === i) {
@@ -465,15 +469,6 @@ function step(w: World, inp: Input, dt: number) {
           w.controlled = i;
         }
       }
-    }
-  }
-
-  // keepers hold, then punt clear
-  if (w.owner !== null && men[w.owner].gk) {
-    w.gkHold -= dt;
-    if (w.gkHold <= 0) {
-      const g = men[w.owner];
-      kickBall(w, w.owner, g.team === 0 ? 230 : 90, 40 + Math.random() * 100, 150);
     }
   }
 
