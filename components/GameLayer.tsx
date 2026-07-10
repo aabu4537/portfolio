@@ -10,9 +10,16 @@ import {
   soundEnabled,
   setSoundEnabled,
 } from "@/lib/sound";
+import MatchGame from "./MatchGame";
+
+const MATCH_TARGET = "__match__";
+const menuItems = [
+  { label: "KICK OFF", sub: "PLAY MATCH", target: MATCH_TARGET },
+  ...modes,
+];
 
 export default function GameLayer() {
-  const [phase, setPhase] = useState<"title" | "menu" | "done">("title");
+  const [phase, setPhase] = useState<"title" | "menu" | "match" | "done">("title");
   const [sel, setSel] = useState(0);
   const [kicked, setKicked] = useState(false);
   const [wiping, setWiping] = useState(false);
@@ -49,15 +56,19 @@ export default function GameLayer() {
 
   function moveSel(i: number) {
     if (i !== selRef.current) sfxBlip();
-    setSel((i + modes.length) % modes.length);
+    setSel((i + menuItems.length) % menuItems.length);
   }
 
   function kickoff(target: string) {
     sfxWhistle();
     setWiping(true);
     window.setTimeout(() => {
-      setPhase("done");
-      document.getElementById(target)?.scrollIntoView({ block: "start" });
+      if (target === MATCH_TARGET) {
+        setPhase("match");
+      } else {
+        setPhase("done");
+        document.getElementById(target)?.scrollIntoView({ block: "start" });
+      }
     }, 300);
     window.setTimeout(() => setWiping(false), 700);
   }
@@ -76,7 +87,7 @@ export default function GameLayer() {
       } else if (p === "menu") {
         if (e.key === "ArrowDown") moveSel(selRef.current + 1);
         if (e.key === "ArrowUp") moveSel(selRef.current - 1);
-        if (e.key === "Enter") kickoff(modes[selRef.current].target);
+        if (e.key === "Enter") kickoff(menuItems[selRef.current].target);
       }
     }
     document.addEventListener("keydown", onKey);
@@ -137,7 +148,7 @@ export default function GameLayer() {
           <div className="modeselect">
             <div className="menupanel">
               <h2 className="px">SELECT MODE</h2>
-              {modes.map((m, i) => (
+              {menuItems.map((m, i) => (
                 <button
                   key={m.target}
                   className={`menuitem px${i === sel ? " sel" : ""}`}
@@ -155,7 +166,16 @@ export default function GameLayer() {
           </div>
         )}
 
-        <p className="px copyline">&copy; 2026 BUSHARA SPORTS SOFTWARE</p>
+        {phase === "match" && (
+          <MatchGame
+            onExit={() => setPhase("menu")}
+            onViewResume={() => kickoff("pro")}
+          />
+        )}
+
+        {phase !== "match" && (
+          <p className="px copyline">&copy; 2026 BUSHARA SPORTS SOFTWARE</p>
+        )}
       </div>
       {wiping && <div className="wipe go" />}
     </>
