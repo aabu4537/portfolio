@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from "react";
 const W = 320;
 const H = 180;
 const FIELD = { left: 14, right: 306, top: 16, bottom: 172 };
-const GOAL_TOP = 76;
-const GOAL_BOT = 104;
+const GOAL_TOP = 72;
+const GOAL_BOT = 108;
 const GOAL_DEPTH = 7;
 const CX = 160;
 const CY = 90;
@@ -15,6 +15,13 @@ const CY = 90;
 const MATCH_SPEED = 1.5; // match minutes per real second: 90' in 60s
 const HUMAN_SPEED = 64;
 const AI_SPEED = 50;
+const GK_SPEED = 22;
+
+/* Penalty boxes are keeper-only: outfielders are held at the edge */
+const BOX_TOP = CY - 32;
+const BOX_BOT = CY + 32;
+const BOX_L = FIELD.left + 30;
+const BOX_R = FIELD.right - 30;
 const CAPTURE_R = 5;
 const GK_CAPTURE_R = 8;
 const TACKLE_R = 11;
@@ -29,7 +36,7 @@ const SKINS = ["#8D5524", "#C68642", "#E0AC69"];
 
 /* Per-team home spots, team 0 attacking right; team 1 is mirrored. Index 0 is the GK. */
 const HOMES: [number, number][] = [
-  [26, 90],
+  [20, 90],
   [72, 52],
   [72, 128],
   [116, 90],
@@ -150,6 +157,30 @@ function freshWorld(): World {
 function clampMan(m: Man) {
   m.x = clamp(m.x, FIELD.left + 2, FIELD.right - 2);
   m.y = clamp(m.y, FIELD.top + 3, FIELD.bottom - 1);
+  if (m.gk) {
+    // keepers never leave their own box
+    if (m.team === 0) m.x = clamp(m.x, FIELD.left + 2, BOX_L);
+    else m.x = clamp(m.x, BOX_R, FIELD.right - 2);
+    m.y = clamp(m.y, BOX_TOP + 3, BOX_BOT - 1);
+    return;
+  }
+  // outfielders are pushed out of either box via the nearest edge
+  if (m.y <= BOX_TOP || m.y >= BOX_BOT) return;
+  if (m.x < BOX_L) {
+    const dx = BOX_L - m.x;
+    const dTop = m.y - BOX_TOP;
+    const dBot = BOX_BOT - m.y;
+    if (dx <= dTop && dx <= dBot) m.x = BOX_L;
+    else if (dTop <= dBot) m.y = BOX_TOP;
+    else m.y = BOX_BOT;
+  } else if (m.x > BOX_R) {
+    const dx = m.x - BOX_R;
+    const dTop = m.y - BOX_TOP;
+    const dBot = BOX_BOT - m.y;
+    if (dx <= dTop && dx <= dBot) m.x = BOX_R;
+    else if (dTop <= dBot) m.y = BOX_TOP;
+    else m.y = BOX_BOT;
+  }
 }
 
 function moveToward(m: Man, tx: number, ty: number, speed: number, dt: number) {
@@ -171,7 +202,7 @@ function moveToward(m: Man, tx: number, ty: number, speed: number, dt: number) {
 
 function takeBall(w: World, i: number) {
   w.owner = i;
-  w.stealGrace = 0.5;
+  w.stealGrace = 0.7;
 }
 
 function kickBall(w: World, from: number, tx: number, ty: number, speed: number) {
@@ -248,11 +279,13 @@ function ballFly(w: World, dt: number, detectGoals: boolean) {
 
 function tryCapture(w: World) {
   const b = w.ball;
+  const speed = Math.hypot(b.vx, b.vy);
   let best = -1;
   let bd = 1e9;
   w.men.forEach((m, i) => {
     if (i === w.lastKicker && w.kickCooldown > 0) return;
-    const r = m.gk ? GK_CAPTURE_R : CAPTURE_R;
+    // keepers can't hold fast shots — only slow/loose balls
+    const r = m.gk ? (speed > 110 ? 3.5 : GK_CAPTURE_R) : CAPTURE_R;
     const d = dist(m, b);
     if (d < r && d < bd) {
       best = i;
@@ -272,8 +305,18 @@ function tryCapture(w: World) {
 }
 
 function gkAI(w: World, m: Man, dt: number) {
-  const ty = clamp(w.ball.y, GOAL_TOP + 2, GOAL_BOT - 2);
-  moveToward(m, m.hx, ty, 42, dt);
+  const b = w.ball;
+  // no outfielder may enter the box, so the keeper must collect loose balls in it
+  const inOwnBox =
+    b.y > BOX_TOP && b.y < BOX_BOT &&
+    b.x > FIELD.left - 5 && b.x < FIELD.right + 5 &&
+    (m.team === 0 ? b.x < BOX_L : b.x > BOX_R);
+  if (w.owner === null && inOwnBox) {
+    moveToward(m, b.x, b.y, GK_SPEED, dt);
+    return;
+  }
+  const ty = clamp(b.y, GOAL_TOP + 2, GOAL_BOT - 2);
+  moveToward(m, m.hx, ty, GK_SPEED, dt);
 }
 
 function carrierAI(w: World, i: number, dt: number) {
@@ -298,16 +341,16 @@ function carrierAI(w: World, i: number, dt: number) {
       return;
     }
   }
-  // shoot in range
-  if (m.x < 70 || (m.x < 110 && Math.random() < dt * 1.2)) {
-    const aim = clamp(CY + (Math.random() * 2 - 1) * 14, GOAL_TOP + 2, GOAL_BOT - 2);
-    kickBall(w, i, FIELD.left - 2, aim, 165);
+  // shoot only from close range; error can still put it wide of the mouth
+  if (m.x < 70 && Math.random() < dt * 2.0) {
+    const aim = clamp(CY + (Math.random() * 2 - 1) * 24, GOAL_TOP - 8, GOAL_BOT + 8);
+    kickBall(w, i, FIELD.left - 2, aim, 150);
   }
 }
 
 function humanShoot(w: World) {
   const c = w.men[w.controlled];
-  const aim = clamp(c.y + c.fy * 40 + (Math.random() * 2 - 1) * 5, GOAL_TOP + 3, GOAL_BOT - 3);
+  const aim = clamp(c.y + c.fy * 40 + (Math.random() * 2 - 1) * 5, GOAL_TOP + 1, GOAL_BOT - 1);
   kickBall(w, w.controlled, FIELD.right + 3, aim, 180);
 }
 
@@ -434,7 +477,7 @@ function step(w: World, inp: Input, dt: number) {
         men[w.owner].team === 0 &&
         dist(m, ball) < TACKLE_R &&
         w.stealGrace <= 0 &&
-        Math.random() < dt * 2.2
+        Math.random() < dt * 1.4
       ) {
         takeBall(w, i);
       }
