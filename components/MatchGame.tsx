@@ -37,11 +37,10 @@ const SKINS = ["#8D5524", "#C68642", "#E0AC69"];
 /* Per-team home spots, team 0 attacking right; team 1 is mirrored. Index 0 is the GK. */
 const HOMES: [number, number][] = [
   [20, 90],
-  [72, 52],
-  [72, 128],
-  [116, 90],
-  [150, 72],
+  [104, 90],
+  [148, 72],
 ];
+const N = HOMES.length; // players per team; team 0 is men[0..N-1], team 1 is men[N..2N-1]
 
 interface Man {
   x: number;
@@ -120,7 +119,7 @@ function placeKickoff(w: World, team: 0 | 1) {
     m.fy = 0;
     m.moving = false;
   });
-  const striker = team === 0 ? 4 : 9;
+  const striker = team * N + (N - 1);
   const s = w.men[striker];
   s.x = CX + (team === 0 ? -8 : 8);
   s.y = CY;
@@ -129,7 +128,7 @@ function placeKickoff(w: World, team: 0 | 1) {
   w.lastKicker = null;
   w.kickCooldown = 0;
   w.stealGrace = 1;
-  w.controlled = 4;
+  w.controlled = N - 1;
   w.mode = "kickoff";
   w.phaseT = 1.1;
   w.kickoffTeam = team;
@@ -143,7 +142,7 @@ function freshWorld(): World {
     lastKicker: null,
     kickCooldown: 0,
     stealGrace: 0,
-    controlled: 4,
+    controlled: N - 1,
     score: [0, 0],
     clock: 0,
     mode: "kickoff",
@@ -326,11 +325,11 @@ function carrierAI(w: World, i: number, dt: number) {
 
   // pass when pressed
   let pressure = 1e9;
-  for (let j = 0; j < 5; j++) pressure = Math.min(pressure, dist(w.men[j], m));
+  for (let j = 0; j < N; j++) pressure = Math.min(pressure, dist(w.men[j], m));
   if (pressure < 14 && Math.random() < dt * 2.5) {
     let mate = -1;
     let mx = m.x - 5;
-    for (let j = 6; j < 10; j++) {
+    for (let j = N + 1; j < 2 * N; j++) {
       if (j !== i && w.men[j].x < mx) {
         mate = j;
         mx = w.men[j].x;
@@ -358,7 +357,7 @@ function humanPass(w: World) {
   const c = w.men[w.controlled];
   let best = -1;
   let bs = -1e9;
-  for (let i = 1; i < 5; i++) {
+  for (let i = 1; i < N; i++) {
     if (i === w.controlled) continue;
     const m = w.men[i];
     const d = dist(c, m) || 1;
@@ -409,7 +408,7 @@ function step(w: World, inp: Input, dt: number) {
     w.controlled = w.owner;
   } else {
     let bd = dist(men[w.controlled], ball);
-    for (let i = 1; i < 5; i++) {
+    for (let i = 1; i < N; i++) {
       const d = dist(men[i], ball);
       if (d < bd - 8) {
         bd = d;
@@ -451,7 +450,7 @@ function step(w: World, inp: Input, dt: number) {
   let chaser = -1;
   if (!awayOwns) {
     let bd = 1e9;
-    for (let i = 6; i < 10; i++) {
+    for (let i = N + 1; i < 2 * N; i++) {
       const d = dist(men[i], ball);
       if (d < bd) {
         bd = d;
@@ -505,7 +504,7 @@ function step(w: World, inp: Input, dt: number) {
     } else {
       // off the ball: force-switch to the man nearest the ball
       let bd = 1e9;
-      for (let i = 1; i < 5; i++) {
+      for (let i = 1; i < N; i++) {
         const d = dist(men[i], ball);
         if (d < bd) {
           bd = d;
