@@ -91,6 +91,9 @@ export default function ProLayer() {
                 <a className="btn primary" href={project.url} target="_blank" rel="noopener noreferrer">
                   WATCH LIVE &raquo;
                 </a>
+                <a className="btn" href={project.github} target="_blank" rel="noopener noreferrer">
+                  GITHUB
+                </a>
               </div>
             </div>
           </article>
