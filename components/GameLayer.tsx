@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { identity, modes } from "@/lib/content";
 import {
   sfxBlip,
@@ -28,11 +29,22 @@ export default function GameLayer() {
   const selRef = useRef(sel);
   phaseRef.current = phase;
   selRef.current = sel;
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Read persisted sound preference after mount (avoids hydration mismatch)
   useEffect(() => {
     setSound(soundEnabled());
   }, []);
+
+  // INSERT COIN link (?play=1) brings the title screen back up
+  useEffect(() => {
+    if (searchParams.get("play") === "1") {
+      setPhase("title");
+      window.scrollTo(0, 0);
+      router.replace("/", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   // Lock body scroll while the game layer is visible
   useEffect(() => {
