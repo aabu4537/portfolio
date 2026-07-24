@@ -4,7 +4,7 @@ An interactive portfolio that blends a retro 16-bit soccer game with a modern so
 
 Instead of scrolling through another static portfolio, visitors begin at a game-inspired title screen before entering a polished, recruiter-friendly resume experience.
 
-**Live Demo:** https://portfolio-nine-gules-45.vercel.app/
+**Live Demo:** https://alambushara.vercel.app/
 
 ---
 
